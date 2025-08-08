@@ -1,73 +1,125 @@
+'use client';
+
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import AppLayout from '@/layouts/app-layout';
-import { Head, useForm } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import { CircleAlert } from 'lucide-react';
+import React, { useState } from 'react';
 
-interface Product {
-    id: number;
-    name: string;
-    description: string;
-    price: number;
-}
-
-interface Props {
-    product: Product;
-}
-
-export default function Edit({ product }: Props) {
-    const { data, setData, put, processing, errors } = useForm({
-        name: product.name,
-        price: product.price,
-        description: product.description,
+export default function Edit({ product, image_url }: any) {
+    const [formData, setFormData] = useState({
+        name: product.name || '',
+        price: product.price || '',
+        description: product.description || '',
+        picture: null,
     });
 
-    const handleUpdate = (e: React.FormEvent) => {
+    const [preview, setPreview] = useState<string | null>(image_url);
+    const [errors, setErrors] = useState<Record<string, string>>({});
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0] || null;
+        setFormData({ ...formData, picture: file });
+
+        if (file) {
+            setPreview(URL.createObjectURL(file));
+        }
+    };
+
+    const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        put(route('products.update', product.id));
+        setErrors({});
+
+        router.post(
+            `/products/${product.id}`,
+            {
+                _method: 'put',
+                ...formData,
+            },
+            {
+                forceFormData: true,
+                onError: (err) => setErrors(err),
+            },
+        );
     };
 
     return (
-        <AppLayout breadcrumbs={[{ title: 'Edit a Product', href: `/products/${product.id}/edit` }]}>
-            <Head title="Update a Product" />
-            <div className="w-8/12 p-4">
-                <form onSubmit={handleUpdate} className="space-y-4">
-                    {/* Display Error */}
+        <div className="mx-auto w-8/12 p-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Display Errors */}
+                {Object.keys(errors).length > 0 && (
+                    <Alert variant="destructive" className="mb-4">
+                        <CircleAlert className="h-4 w-4" />
+                        <AlertTitle>Error</AlertTitle>
+                        <AlertDescription>
+                            <ul className="list-inside list-disc">
+                                {Object.entries(errors).map(([key, message]) => (
+                                    <li key={key}>{message as string}</li>
+                                ))}
+                            </ul>
+                        </AlertDescription>
+                    </Alert>
+                )}
 
-                    {Object.keys(errors).length > 0 && (
-                        <Alert>
-                            <CircleAlert />
-                            <AlertTitle>Error!</AlertTitle>
-                            <AlertDescription>
-                                <ul>
-                                    {Object.entries(errors).map(([Key, message]) => (
-                                        <li key={Key}>{message as string}</li>
-                                    ))}
-                                </ul>
-                            </AlertDescription>
-                        </Alert>
-                    )}
+                {/* Current Image Preview */}
+                {preview && (
+                    <div className="space-y-2">
+                        <Label>Current Image</Label>
+                        <img src={preview} alt="Preview" className="h-40 w-40 rounded object-cover" />
+                    </div>
+                )}
 
-                    <div className="gap-1.5">
-                        <Label htmlFor="product name">Name</Label>
-                        <Input placeholder="Product Name" value={data.name} onChange={(e) => setData('name', e.target.value)}></Input>
-                    </div>
-                    <div className="gap-1.5">
-                        <Label htmlFor="product price">Price</Label>
-                        <Input placeholder="Price" value={data.price} onChange={(e) => setData('price', e.target.value)}></Input>
-                    </div>
-                    <div className="gap-1.5">
-                        <Label htmlFor="product description">Description</Label>
-                        <Textarea placeholder="Description" value={data.description} onChange={(e) => setData('description', e.target.value)} />
-                    </div>
-                    <Button disabled={processing} type="submit">
-                        Update Product
-                    </Button>
-                </form>
-            </div>
-        </AppLayout>
+                {/* Picture Upload */}
+                <div className="space-y-2">
+                    <Label htmlFor="product-picture">Upload New Image</Label>
+                    <Input id="product-picture" type="file" accept="image/*" onChange={handleFileChange} />
+                </div>
+
+                {/* Name */}
+                <div className="space-y-2">
+                    <Label htmlFor="product-name">Name *</Label>
+                    <Input
+                        id="product-name"
+                        type="text"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        placeholder="Product Name"
+                    />
+                </div>
+
+                {/* Price */}
+                <div className="space-y-2">
+                    <Label htmlFor="product-price">Price *</Label>
+                    <Input
+                        id="product-price"
+                        type="number"
+                        value={formData.price}
+                        onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                        placeholder="Price"
+                        step="0.01"
+                        min="0"
+                    />
+                </div>
+
+                {/* Description */}
+                <div className="space-y-2">
+                    <Label htmlFor="product-description">Description</Label>
+                    <Textarea
+                        id="product-description"
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        placeholder="Description"
+                    />
+                </div>
+
+                {/* Submit Button */}
+                <Button type="submit" className="w-full">
+                    Update Product
+                </Button>
+            </form>
+        </div>
     );
 }

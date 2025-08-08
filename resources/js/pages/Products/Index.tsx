@@ -18,6 +18,7 @@ interface Product {
     name: string;
     price: number;
     description: string;
+    image?: string; // <-- Added image field
 }
 
 interface PageProps {
@@ -63,6 +64,7 @@ export default function Index() {
                         <TableHeader>
                             <TableRow>
                                 <TableHead className="w-[100px]">ID</TableHead>
+                                <TableHead>Image</TableHead> {/* <-- Added header */}
                                 <TableHead>Name</TableHead>
                                 <TableHead>Price</TableHead>
                                 <TableHead>Description</TableHead>
@@ -71,8 +73,15 @@ export default function Index() {
                         </TableHeader>
                         <TableBody>
                             {products.map((product) => (
-                                <TableRow>
+                                <TableRow key={product.id}>
                                     <TableCell className="font-medium">{product.id}</TableCell>
+                                    <TableCell>
+                                        {product.image ? (
+                                            <img src={`/storage/${product.image}`} alt={product.name} className="h-12 w-12 rounded object-cover" />
+                                        ) : (
+                                            <span className="text-gray-400 italic">No image</span>
+                                        )}
+                                    </TableCell>
                                     <TableCell>{product.name}</TableCell>
                                     <TableCell>{product.price}</TableCell>
                                     <TableCell>{product.description}</TableCell>
