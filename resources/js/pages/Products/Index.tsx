@@ -3,60 +3,67 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, useForm, usePage } from '@inertiajs/react';
 import { Megaphone } from 'lucide-react';
+import { useState } from 'react';
+import Create from './Create';
+import Edit from './Edit';
 
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Products',
-        href: '/products',
-    },
-];
+const breadcrumbs: BreadcrumbItem[] = [{ title: 'Products', href: '/products' }];
 
 interface Product {
     id: number;
     name: string;
     price: number;
     description: string;
-    image?: string; // <-- Added image field
+    image?: string;
 }
 
 interface PageProps {
-    flash: {
-        message?: string;
-    };
+    flash: { message?: string };
     products: Product[];
 }
 
 export default function Index() {
     const { products, flash } = usePage().props as PageProps;
-
     const { processing, delete: destroy } = useForm();
+
+    const [openEdit, setOpenEdit] = useState(false);
+    const [openCreate, setOpenCreate] = useState(false);
+    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
     const handleDelete = (id: number, name: string) => {
         if (confirm(`Do you want to delete a product - ${id}. ${name}`)) {
             destroy(route('products.destroy', id));
         }
     };
+
+    const handleEditClick = (product: Product) => {
+        setSelectedProduct(product);
+        setOpenEdit(true);
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Products" />
+
+            {/* Create Product Button */}
             <div className="m-4">
-                <Link href={route('products.create')}>
-                    <Button>Create a Product</Button>
-                </Link>
+                <Button onClick={() => setOpenCreate(true)}>Create a Product</Button>
             </div>
-            <div className="m-4">
-                <div>
-                    {flash.message && (
-                        <Alert>
-                            <Megaphone className="h-4 w-4" />
-                            <AlertTitle>Notification!</AlertTitle>
-                            <AlertDescription>{flash.message}</AlertDescription>
-                        </Alert>
-                    )}
+
+            {/* Notification Alert */}
+            {flash.message && (
+                <div className="m-4">
+                    <Alert>
+                        <Megaphone className="h-4 w-4" />
+                        <AlertTitle>Notification!</AlertTitle>
+                        <AlertDescription>{flash.message}</AlertDescription>
+                    </Alert>
                 </div>
-            </div>
+            )}
+
+            {/* Products Table */}
             {products.length > 0 && (
                 <div className="m-4">
                     <Table>
@@ -64,7 +71,7 @@ export default function Index() {
                         <TableHeader>
                             <TableRow>
                                 <TableHead className="w-[100px]">ID</TableHead>
-                                <TableHead>Image</TableHead> {/* <-- Added header */}
+                                <TableHead>Image</TableHead>
                                 <TableHead>Name</TableHead>
                                 <TableHead>Price</TableHead>
                                 <TableHead>Description</TableHead>
@@ -86,9 +93,9 @@ export default function Index() {
                                     <TableCell>{product.price}</TableCell>
                                     <TableCell>{product.description}</TableCell>
                                     <TableCell className="space-x-2 text-center">
-                                        <Link href={route('products.edit', product.id)}>
-                                            <Button className="bg-slate-600 hover:bg-slate-700">Edit</Button>
-                                        </Link>
+                                        <Button className="bg-slate-600 hover:bg-slate-700" onClick={() => handleEditClick(product)}>
+                                            Edit
+                                        </Button>
                                         <Button
                                             disabled={processing}
                                             onClick={() => handleDelete(product.id, product.name)}
@@ -103,6 +110,19 @@ export default function Index() {
                     </Table>
                 </div>
             )}
+
+            {/* Edit Modal */}
+            {selectedProduct && (
+                <Edit
+                    open={openEdit}
+                    onOpenChange={setOpenEdit}
+                    product={selectedProduct}
+                    image_url={selectedProduct.image ? `/storage/${selectedProduct.image}` : null}
+                />
+            )}
+
+            {/* Create Modal */}
+            <Create open={openCreate} onOpenChange={setOpenCreate} />
         </AppLayout>
     );
 }

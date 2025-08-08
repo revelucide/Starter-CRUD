@@ -1,48 +1,76 @@
+'use client';
+
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
-import { Head, useForm } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import { CircleAlert } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Create a New Product',
-        href: '/products/create',
-    },
-];
-
-export default function Index() {
-    const { data, setData, post, processing, errors, reset } = useForm({
+export default function Create({ open, onOpenChange }: any) {
+    const [formData, setFormData] = useState({
         name: '',
         price: '',
         description: '',
-        picture: null as File | null,
+        picture: null,
     });
+
+    const [preview, setPreview] = useState<string | null>(null);
+    const [errors, setErrors] = useState<Record<string, string>>({});
+
+    // Reset form whenever dialog opens
+    useEffect(() => {
+        if (open) {
+            setFormData({
+                name: '',
+                price: '',
+                description: '',
+                picture: null,
+            });
+            setPreview(null);
+            setErrors({});
+        }
+    }, [open]);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0] || null;
+        setFormData({ ...formData, picture: file });
+
+        if (file) {
+            setPreview(URL.createObjectURL(file));
+        }
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        post(route('products.store'), {
-            forceFormData: true, // Needed for file uploads
-            onSuccess: () => {
-                reset(); // Clear form after successful submission
+        setErrors({});
+
+        router.post(
+            '/products',
+            { ...formData },
+            {
+                forceFormData: true,
+                onError: (err) => setErrors(err),
+                onSuccess: () => onOpenChange(false),
             },
-        });
+        );
     };
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Create a New Product" />
-            <div className="w-8/12 p-4">
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* Display Error */}
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-lg">
+                <DialogHeader>
+                    <DialogTitle>Create Product</DialogTitle>
+                </DialogHeader>
+
+                <form onSubmit={handleSubmit} className="space-y-6">
                     {Object.keys(errors).length > 0 && (
                         <Alert variant="destructive">
                             <CircleAlert className="h-4 w-4" />
-                            <AlertTitle>Error!</AlertTitle>
+                            <AlertTitle>Error</AlertTitle>
                             <AlertDescription>
                                 <ul className="list-inside list-disc">
                                     {Object.entries(errors).map(([key, message]) => (
@@ -53,51 +81,57 @@ export default function Index() {
                         </Alert>
                     )}
 
-                    <div className="gap-1.5">
-                        <Label htmlFor="product-name">Name</Label>
+                    {preview && (
+                        <div className="space-y-2">
+                            <Label>Image Preview</Label>
+                            <img src={preview} alt="Preview" className="h-32 w-32 rounded object-cover" />
+                        </div>
+                    )}
+
+                    <div className="space-y-2">
+                        <Label htmlFor="product-picture">Upload Image</Label>
+                        <Input id="product-picture" type="file" accept="image/*" onChange={handleFileChange} />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="product-name">Name *</Label>
                         <Input
                             id="product-name"
+                            type="text"
+                            value={formData.name}
+                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                             placeholder="Product Name"
-                            value={data.name}
-                            onChange={(e) => setData('name', e.target.value)}
-                            required
                         />
                     </div>
 
-                    <div className="gap-1.5">
-                        <Label htmlFor="product-price">Price</Label>
+                    <div className="space-y-2">
+                        <Label htmlFor="product-price">Price *</Label>
                         <Input
                             id="product-price"
                             type="number"
-                            step="0.01"
+                            value={formData.price}
+                            onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                             placeholder="Price"
-                            value={data.price}
-                            onChange={(e) => setData('price', e.target.value)}
-                            required
+                            step="0.01"
+                            min="0"
                         />
                     </div>
 
-                    <div className="gap-1.5">
+                    <div className="space-y-2">
                         <Label htmlFor="product-description">Description</Label>
                         <Textarea
                             id="product-description"
+                            value={formData.description}
+                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                             placeholder="Description"
-                            value={data.description}
-                            onChange={(e) => setData('description', e.target.value)}
-                            required
                         />
                     </div>
 
-                    <div className="gap-1.5">
-                        <Label htmlFor="product-picture">Picture</Label>
-                        <Input id="product-picture" type="file" accept="image/*" onChange={(e) => setData('picture', e.target.files?.[0] || null)} />
-                    </div>
-
-                    <Button disabled={processing} type="submit" className="w-full">
-                        {processing ? 'Saving...' : 'Add Product'}
+                    <Button type="submit" className="w-full">
+                        Create Product
                     </Button>
                 </form>
-            </div>
-        </AppLayout>
+            </DialogContent>
+        </Dialog>
     );
 }
