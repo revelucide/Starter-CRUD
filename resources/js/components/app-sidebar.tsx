@@ -4,24 +4,34 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { BookOpen, Folder, House, LayoutGrid, PackageSearch } from 'lucide-react';
+import { BookOpen, CalendarCheck, Folder, House, LayoutGrid, List, PackageSearch } from 'lucide-react';
 import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
+    {
+        title: 'Overview',
+        href: '/overview',
+        icon: House,
+    },
     {
         title: 'Dashboard',
         href: '/dashboard',
         icon: LayoutGrid,
     },
     {
+        title: 'Lists',
+        href: '/lists',
+        icon: List,
+    },
+    {
+        title: 'Tasks',
+        href: '/tasks',
+        icon: CalendarCheck,
+    },
+    {
         title: 'Products',
         href: '/products',
         icon: PackageSearch,
-    },
-    {
-        title: 'Overview',
-        href: '/overview',
-        icon: House,
     },
 ];
 

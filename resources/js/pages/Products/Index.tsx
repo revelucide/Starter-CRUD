@@ -1,6 +1,5 @@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
 import { Head, useForm, usePage } from '@inertiajs/react';
@@ -33,7 +32,7 @@ export default function Index() {
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
     const handleDelete = (id: number, name: string) => {
-        if (confirm(`Do you want to delete a product - ${id}. ${name}`)) {
+        if (confirm(`Do you want to delete product - ${id}. ${name}?`)) {
             destroy(route('products.destroy', id));
         }
     };
@@ -43,72 +42,74 @@ export default function Index() {
         setOpenEdit(true);
     };
 
+    const formatPrice = (price: number) => {
+        return <span className="font-semibold text-green-600">₱{price.toLocaleString()}</span>;
+    };
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Products" />
 
             {/* Create Product Button */}
-            <div className="m-4">
-                <Button onClick={() => setOpenCreate(true)}>Create a Product</Button>
+            <div className="m-4 flex justify-end">
+                <Button onClick={() => setOpenCreate(true)} className="bg-blue-600 text-white hover:bg-blue-700">
+                    + Create Product
+                </Button>
             </div>
 
             {/* Notification Alert */}
             {flash.message && (
                 <div className="m-4">
-                    <Alert>
+                    <Alert className="border border-gray-500 bg-gray-50 dark:border-gray-700 dark:bg-gray-950">
                         <Megaphone className="h-4 w-4" />
-                        <AlertTitle>Notification!</AlertTitle>
+                        <AlertTitle className="font-semibold">Notification!</AlertTitle>
                         <AlertDescription>{flash.message}</AlertDescription>
                     </Alert>
                 </div>
             )}
 
-            {/* Products Table */}
-            {products.length > 0 && (
-                <div className="m-4">
-                    <Table>
-                        <TableCaption>A list of your recent products.</TableCaption>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="w-[100px]">ID</TableHead>
-                                <TableHead>Image</TableHead>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Price</TableHead>
-                                <TableHead>Description</TableHead>
-                                <TableHead className="text-center">Action</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {products.map((product) => (
-                                <TableRow key={product.id}>
-                                    <TableCell className="font-medium">{product.id}</TableCell>
-                                    <TableCell>
-                                        {product.image ? (
-                                            <img src={`/storage/${product.image}`} alt={product.name} className="h-12 w-12 rounded object-cover" />
-                                        ) : (
-                                            <span className="text-gray-400 italic">No image</span>
-                                        )}
-                                    </TableCell>
-                                    <TableCell>{product.name}</TableCell>
-                                    <TableCell>{product.price}</TableCell>
-                                    <TableCell>{product.description}</TableCell>
-                                    <TableCell className="space-x-2 text-center">
-                                        <Button className="bg-slate-600 hover:bg-slate-700" onClick={() => handleEditClick(product)}>
-                                            Edit
-                                        </Button>
-                                        <Button
-                                            disabled={processing}
-                                            onClick={() => handleDelete(product.id, product.name)}
-                                            className="bg-red-500 hover:bg-red-700"
-                                        >
-                                            Delete
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+            {/* Products Card Grid */}
+            {products.length > 0 ? (
+                <div className="m-4 grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                    {products.map((product) => (
+                        <div
+                            key={product.id}
+                            className="flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-lg dark:border-gray-800 dark:bg-black"
+                        >
+                            {/* Product Image */}
+                            {product.image ? (
+                                <img src={`/storage/${product.image}`} alt={product.name} className="h-48 w-full object-cover" />
+                            ) : (
+                                <div className="flex h-48 w-full items-center justify-center bg-gray-200 text-gray-500 italic dark:bg-gray-800">
+                                    No image
+                                </div>
+                            )}
+
+                            {/* Product Info */}
+                            <div className="flex flex-grow flex-col p-4">
+                                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{product.name}</h3>
+                                <p className="flex-grow text-sm text-gray-500 dark:text-gray-400">{product.description}</p>
+                                <div className="mt-2">{formatPrice(product.price)}</div>
+
+                                {/* Actions */}
+                                <div className="mt-4 flex gap-2">
+                                    <Button className="flex-1 bg-slate-600 text-white hover:bg-slate-700" onClick={() => handleEditClick(product)}>
+                                        Edit
+                                    </Button>
+                                    <Button
+                                        className="flex-1 bg-red-500 text-white hover:bg-red-600"
+                                        disabled={processing}
+                                        onClick={() => handleDelete(product.id, product.name)}
+                                    >
+                                        Delete
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
                 </div>
+            ) : (
+                <p className="m-4 text-gray-500 dark:text-gray-400">No products found.</p>
             )}
 
             {/* Edit Modal */}
